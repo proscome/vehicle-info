@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>車両情報検索</title>
+
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#ffffff">
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        "Noto Sans JP",
+        sans-serif;
+      background: #f3f5f7;
+      color: #222;
+    }
+
+    .container {
+      max-width: 620px;
+      margin: 0 auto;
+    }
+
+    .card {
+      position: relative;
+      background: #fff;
+      border-radius: 14px;
+      padding: 24px 22px 78px;
+      box-shadow: 0 3px 14px rgba(0, 0, 0, 0.08);
+    }
+
+    h1 {
+      margin: 0 0 24px;
+      font-size: 24px;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .step {
+      margin-bottom: 26px;
+    }
+
+    .step-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+      color: #555;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 12px 13px;
+      border: 1px solid #bbb;
+      border-radius: 8px;
+      font-size: 17px;
+      background: #fff;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #666;
+      box-shadow: 0 0 0 2px rgba(80, 80, 80, 0.12);
+    }
+
+    button {
+      width: 100%;
+      padding: 12px 14px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #333;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    button.secondary {
+      background: #777;
+    }
+
+    .history {
+      margin-top: 10px;
+    }
+
+    .history-title {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 6px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .history-item {
+      width: auto;
+      margin: 0;
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 16px;
+      background: #fafafa;
+      color: #333;
+      font-size: 13px;
+    }
+
+    .result {
+      display: none;
+      margin-top: 26px;
+      padding-top: 20px;
+      border-top: 1px solid #ddd;
+    }
+
+    .result-title {
+      font-size: 19px;
+      font-weight: 600;
+      margin-bottom: 14px;
+    }
+
+    .result-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 15px;
+    }
+
+    .result-table th,
+    .result-table td {
+      padding: 10px 8px;
+      border-bottom: 1px solid #ddd;
+      vertical-align: top;
+      text-align: left;
+    }
+
+    .result-table th {
+      width: 42%;
+      background: #f7f7f7;
+      font-weight: 500;
+    }
+
+    .message {
+      display: none;
+      margin-top: 20px;
+      padding: 14px;
+      border-radius: 8px;
+      background: #fff4d6;
+      border: 1px solid #e2c878;
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    .message.error {
+      background: #fff0f0;
+      border-color: #e0aaaa;
+    }
+
+    .search-info {
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: #f6f6f6;
+      border-radius: 7px;
+      font-size: 13px;
+      color: #555;
+      line-height: 1.6;
+    }
+
+    .creator {
+      position: absolute;
+      right: 16px;
+      bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: #777;
+    }
+
+    .creator img {
+      width: 22px;
+      height: 22px;
+      object-fit: contain;
+      opacity: 0.8;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 12px;
+      }
+
+      .card {
+        padding: 20px 16px 72px;
+      }
+
+      h1 {
+        font-size: 22px;
+      }
+
+      .step-title {
+        font-size: 17px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+  <div class="card">
+
+    <h1>車両情報検索</h1>
+
+    <!-- メーカー入力 -->
+    <div class="step" id="manufacturerStep">
+
+      <div class="step-title">① メーカー</div>
+
+      <label for="manufacturer">
+        車検証表現の車名（メーカー名）
+      </label>
+
+      <input
+        type="text"
+        id="manufacturer"
+        placeholder="例：三菱、日野、いすゞ"
+        autocomplete="off"
+      >
+
+      <button id="nextButton">次へ</button>
+
+      <div class="history" id="historyArea">
+        <div class="history-title">入力履歴</div>
+        <div class="history-list" id="historyList"></div>
+      </div>
+
+    </div>
+
+
+    <!-- 型式入力 -->
+    <div class="step hidden" id="modelStep">
+
+      <div class="step-title">② 排ガス記号＋型式</div>
+
+      <label for="model">
+        排ガス記号と型式を入力してください
+      </label>
+
+      <input
+        type="text"
+        id="model"
+        placeholder="例：ADG-SH1EDXG"
+        autocomplete="off"
+      >
+
+      <button id="searchButton">検索</button>
+
+      <button
+        id="backButton"
+        class="secondary"
+      >
+        メーカー入力に戻る
+      </button>
+
+    </div>
+
+
+    <!-- 検索情報 -->
+    <div
+      class="search-info hidden"
+      id="searchInfo"
+    ></div>
+
+
+    <!-- メッセージ -->
+    <div
+      class="message"
+      id="message"
+    ></div>
+
+
+    <!-- 検索結果 -->
+    <div
+      class="result"
+      id="result"
+    >
+
+      <div class="result-title">車両情報</div>
+
+      <table class="result-table">
+        <tbody>
+
+          <tr>
+            <th>メーカー</th>
+            <td id="resultManufacturer"></td>
+          </tr>
+
+          <tr>
+            <th>排ガス記号＋型式</th>
+            <td id="resultModel"></td>
+          </tr>
+
+          <tr>
+            <th>車速信号</th>
+            <td id="speedSignal"></td>
+          </tr>
+
+          <tr>
+            <th>車速パルス</th>
+            <td id="speedPulse"></td>
+          </tr>
+
+          <tr>
+            <th>車速取得場所</th>
+            <td id="speedLocation"></td>
+          </tr>
+
+          <tr>
+            <th>エンジン回転信号</th>
+            <td id="engineSignal"></td>
+          </tr>
+
+          <tr>
+            <th>エンジン回転パルス</th>
+            <td id="enginePulse"></td>
+          </tr>
+
+          <tr>
+            <th>エンジン回転取得場所</th>
+            <td id="engineLocation"></td>
+          </tr>
+
+        </tbody>
+      </table>
+
+    </div>
+
+
+    <!-- PROSCOME -->
+    <div class="creator">
+      <img
+        src="icons/proscome-icon.png"
+        alt="PROSCOME"
+      >
+      <span>PROSCOME</span>
+    </div>
+
+  </div>
+</div>
+
+
+<script>
+
+  /* =========================================================
+     車両データ
+     ========================================================= */
+
+  let vehicles = [];
+
+
+  /* =========================================================
+     DOM
+     ========================================================= */
+
+  const manufacturerInput =
+    document.getElementById("manufacturer");
+
+  const modelInput =
+    document.getElementById("model");
+
+  const nextButton =
+    document.getElementById("nextButton");
+
+  const searchButton =
+    document.getElementById("searchButton");
+
+  const backButton =
+    document.getElementById("backButton");
+
+  const manufacturerStep =
+    document.getElementById("manufacturerStep");
+
+  const modelStep =
+    document.getElementById("modelStep");
+
+  const historyList =
+    document.getElementById("historyList");
+
+  const historyArea =
+    document.getElementById("historyArea");
+
+  const result =
+    document.getElementById("result");
+
+  const message =
+    document.getElementById("message");
+
+  const searchInfo =
+    document.getElementById("searchInfo");
+
+
+  /* =========================================================
+     vehicle.json 読み込み
+     ========================================================= */
+
+  async function loadVehicles() {
+
+    try {
+
+      const response =
+        await fetch("./vehicle.json", {
+          cache: "no-cache"
+        });
+
+      if (!response.ok) {
+        throw new Error(
+          "vehicle.json を読み込めませんでした。"
+        );
+      }
+
+      const data = await response.json();
+
+      /*
+       * vehicle.json は
+       *
+       * {
+       *   "version": "...",
+       *   "vehicles": [...]
+       * }
+       *
+       * の構造
+       */
+
+      if (
+        !data ||
+        !Array.isArray(data.vehicles)
+      ) {
+        throw new Error(
+          "vehicle.json に vehicles 配列がありません。"
+        );
+      }
+
+      vehicles = data.vehicles;
+
+      console.log(
+        "車両データ読み込み完了:",
+        vehicles.length,
+        "件"
+      );
+
+    } catch (error) {
+
+      console.error(error);
+
+      showMessage(
+        "車両データを読み込めませんでした。<br>" +
+        "vehicle.json の配置を確認してください。",
+        true
+      );
+    }
+  }
+
+
+  /* =========================================================
+     メーカー変換
+     
+     元Excel VBAの Select Case と同じ
+     ========================================================= */
+
+  function convertManufacturer(name) {
+
+    switch (name) {
+
+      case "いすず":
+        return "いすゞ";
+
+      case "ふそう":
+      case "三菱":
+        return "三菱ふそう";
+
+      case "ＵＤトラックス":
+      case "日産ディーゼル":
+      case "ニッサンディーゼル":
+        return "ＵＤ";
+
+      case "ニッサン":
+      case "日産":
+        return "日産自動車";
+
+      default:
+        return name;
+    }
+  }
+
+
+  /* =========================================================
+     VBAの Option Compare Text 相当
+     ========================================================= */
+
+  function compareText(value) {
+
+    return String(value ?? "")
+      .toLocaleLowerCase();
+  }
+
+
+  /* =========================================================
+     VBA Like → JavaScript RegExp 変換
+     
+       *       任意の文字列
+       ?       任意の1文字
+       #       数字1文字
+       [abc]   a,b,c のいずれか
+       [!abc]  a,b,c 以外
+     ========================================================= */
+
+  function vbaLikeToRegExp(pattern) {
+
+    let regex = "^";
+
+    let i = 0;
+
+    while (i < pattern.length) {
+
+      const ch = pattern[i];
+
+      /* * */
+
+      if (ch === "*") {
+
+        regex += ".*";
+
+        i++;
+        continue;
+      }
+
+
+      /* ? */
+
+      if (ch === "?") {
+
+        regex += ".";
+
+        i++;
+        continue;
+      }
+
+
+      /* # */
+
+      if (ch === "#") {
+
+        regex += "[0-9]";
+
+        i++;
+        continue;
+      }
+
+
+      /* [ ... ] */
+
+      if (ch === "[") {
+
+        let end = i + 1;
+
+        while (
+          end < pattern.length &&
+          pattern[end] !== "]"
+        ) {
+          end++;
+        }
+
+        if (end < pattern.length) {
+
+          let content =
+            pattern.substring(i + 1, end);
+
+          /*
+           * VBA Like の [!ABC]
+           */
+
+          if (content.startsWith("!")) {
+
+            content =
+              content.substring(1);
+
+            regex +=
+              "[^" +
+              escapeRegexCharClass(content) +
+              "]";
+
+          } else {
+
+            regex +=
+              "[" +
+              escapeRegexCharClass(content) +
+              "]";
+          }
+
+          i = end + 1;
+          continue;
+        }
+      }
+
+
+      /* 通常文字 */
+
+      regex +=
+        escapeRegexCharacter(ch);
+
+      i++;
+    }
+
+    regex += "$";
+
+    return new RegExp(
+      regex,
+      "i"
+    );
+  }
+
+
+  /* =========================================================
+     RegExp特殊文字エスケープ
+     ========================================================= */
+
+  function escapeRegexCharacter(ch) {
+
+    if (
+      ch === "\\" ||
+      ch === "." ||
+      ch === "+" ||
+      ch === "^" ||
+      ch === "$" ||
+      ch === "(" ||
+      ch === ")" ||
+      ch === "|" ||
+      ch === "{" ||
+      ch === "}"
+    ) {
+      return "\\" + ch;
+    }
+
+    return ch;
+  }
+
+
+  /* =========================================================
+     [] 内の文字をエスケープ
+     ========================================================= */
+
+  function escapeRegexCharClass(text) {
+
+    return text.replace(
+      /[\\\]\[\-^]/g,
+      "\\$&"
+    );
+  }
+
+
+  /* =========================================================
+     VBA Like 相当の比較
+     ========================================================= */
+
+  function vbaLike(value, pattern) {
+
+    const valueText =
+      compareText(value);
+
+    const patternText =
+      compareText(pattern);
+
+    try {
+
+      const regex =
+        vbaLikeToRegExp(patternText);
+
+      return regex.test(valueText);
+
+    } catch (error) {
+
+      console.error(
+        "Likeパターン変換エラー:",
+        pattern,
+        error
+      );
+
+      return false;
+    }
+  }
+
+
+  /* =========================================================
+     全角スペース除去
+     ========================================================= */
+
+  function removeFullWidthSpaces(value) {
+
+    return String(value ?? "")
+      .replace(/　/g, "");
+  }
+
+
+  /* =========================================================
+     車両検索
+     ========================================================= */
+
+  function findVehicle(
+    manufacturer,
+    kata
+  ) {
+
+    /*
+     * 元マクロと同じメーカー変換
+     */
+
+    const cn =
+      convertManufacturer(
+        removeFullWidthSpaces(
+          manufacturer
+        )
+      );
+
+
+    /*
+     * 元マクロと同じ
+     *
+     * If kata = "不明" Or kata = "" Then kata = "-"
+     */
+
+    let searchKata =
+      removeFullWidthSpaces(kata);
+
+    if (
+      searchKata === "不明" ||
+      searchKata === ""
+    ) {
+      searchKata = "-";
+    }
+
+
+    /*
+     * vehicle.json を上から順番に検索
+     */
+
+    for (
+      let i = 0;
+      i < vehicles.length;
+      i++
+    ) {
+
+      const vehicle =
+        vehicles[i];
+
+
+      /*
+       * JSON側メーカー
+       */
+
+      const tcn =
+        removeFullWidthSpaces(
+          vehicle.manufacturer ?? ""
+        );
+
+
+      /*
+       * JSON側の
+       *
+       * emission + "-" + model
+       */
+
+      const emission =
+        removeFullWidthSpaces(
+          vehicle.emission ?? ""
+        );
+
+      const model =
+        removeFullWidthSpaces(
+          vehicle.model ?? ""
+        );
+
+      const tkata =
+        emission + "-" + model;
+
+
+      /*
+       * メーカー一致
+       */
+
+      if (
+        compareText(cn) !==
+        compareText(tcn)
+      ) {
+        continue;
+      }
+
+
+      /*
+       * VBA Like 相当
+       */
+
+      const result =
+        vbaLike(
+          searchKata,
+          tkata
+        );
+
+
+      /*
+       * 最初に一致したものを採用
+       */
+
+      if (result) {
+
+        return {
+          vehicle: vehicle,
+          manufacturer: cn,
+          pattern: tkata,
+          input: searchKata,
+          index: i
+        };
+      }
+    }
+
+
+    /*
+     * 一致なし
+     */
+
+    return null;
+  }
+
+
+  /* =========================================================
+     検索実行
+     ========================================================= */
+
+  function searchVehicle() {
+
+    hideMessage();
+    hideResult();
+
+
+    const manufacturer =
+      removeFullWidthSpaces(
+        manufacturerInput.value.trim()
+      );
+
+    const kata =
+      removeFullWidthSpaces(
+        modelInput.value.trim()
+      );
+
+
+    if (manufacturer === "") {
+
+      showMessage(
+        "メーカー名を入力してください。",
+        true
+      );
+
+      return;
+    }
+
+
+    if (kata === "") {
+
+      showMessage(
+        "排ガス記号＋型式を入力してください。",
+        true
+      );
+
+      return;
+    }
+
+
+    /*
+     * 検索
+     */
+
+    const found =
+      findVehicle(
+        manufacturer,
+        kata
+      );
+
+
+    /*
+     * 検索情報表示
+     */
+
+    const convertedManufacturer =
+      convertManufacturer(
+        manufacturer
+      );
+
+    searchInfo.innerHTML =
+      "入力メーカー： " +
+      escapeHtml(manufacturer) +
+      "<br>" +
+      "検索メーカー： " +
+      escapeHtml(convertedManufacturer) +
+      "<br>" +
+      "排ガス記号＋型式： " +
+      escapeHtml(kata);
+
+    searchInfo.classList.remove(
+      "hidden"
+    );
+
+
+    /*
+     * ヒットしなかった場合
+     */
+
+    if (!found) {
+
+      showMessage(
+        "まだ登録されていない型式の可能性があります。",
+        false
+      );
+
+      return;
+    }
+
+
+    /*
+     * ヒット
+     */
+
+    const v =
+      found.vehicle;
+
+
+    document.getElementById(
+      "resultManufacturer"
+    ).textContent =
+      v.manufacturer ?? "";
+
+
+    document.getElementById(
+      "resultModel"
+    ).textContent =
+      (
+        v.emission ?? ""
+      ) +
+      "-" +
+      (
+        v.model ?? ""
+      );
+
+
+    document.getElementById(
+      "speedSignal"
+    ).textContent =
+      v.speedSignal ?? "-";
+
+
+    document.getElementById(
+      "speedPulse"
+    ).textContent =
+      v.speedPulse ?? "-";
+
+
+    document.getElementById(
+      "speedLocation"
+    ).textContent =
+      v.speedLocation ?? "-";
+
+
+    document.getElementById(
+      "engineSignal"
+    ).textContent =
+      v.engineSignal ?? "-";
+
+
+    document.getElementById(
+      "enginePulse"
+    ).textContent =
+      v.enginePulse ?? "-";
+
+
+    document.getElementById(
+      "engineLocation"
+    ).textContent =
+      v.engineLocation ?? "-";
+
+
+    result.style.display =
+      "block";
+
+
+    console.log(
+      "車両検索ヒット:",
+      found
+    );
+  }
+
+
+  /* =========================================================
+     メーカー履歴
+     ========================================================= */
+
+  const HISTORY_KEY =
+    "vehicleInfoManufacturerHistory";
+
+
+  function loadHistory() {
+
+    let history = [];
+
+    try {
+
+      const saved =
+        localStorage.getItem(
+          HISTORY_KEY
+        );
+
+      if (saved) {
+
+        const parsed =
+          JSON.parse(saved);
+
+        if (Array.isArray(parsed)) {
+          history = parsed;
+        }
+      }
+
+    } catch (error) {
+
+      console.error(
+        "履歴読み込みエラー:",
+        error
+      );
+    }
+
+
+    renderHistory(history);
+  }
+
+
+  function saveManufacturerHistory(
+    manufacturer
+  ) {
+
+    manufacturer =
+      removeFullWidthSpaces(
+        manufacturer.trim()
+      );
+
+    if (!manufacturer) {
+      return;
+    }
+
+
+    let history = [];
+
+    try {
+
+      const saved =
+        localStorage.getItem(
+          HISTORY_KEY
+        );
+
+      if (saved) {
+
+        const parsed =
+          JSON.parse(saved);
+
+        if (Array.isArray(parsed)) {
+          history = parsed;
+        }
+      }
+
+    } catch (error) {
+
+      console.error(error);
+    }
+
+
+    /*
+     * 同じメーカーがあれば削除
+     * 新しいものを先頭へ
+     */
+
+    history =
+      history.filter(
+        item =>
+          compareText(item) !==
+          compareText(manufacturer)
+      );
+
+
+    history.unshift(
+      manufacturer
+    );
+
+
+    /*
+     * 最大10件
+     */
+
+    history =
+      history.slice(0, 10);
+
+
+    localStorage.setItem(
+      HISTORY_KEY,
+      JSON.stringify(history)
+    );
+
+
+    renderHistory(history);
+  }
+
+
+  function renderHistory(history) {
+
+    historyList.innerHTML = "";
+
+
+    if (
+      !Array.isArray(history) ||
+      history.length === 0
+    ) {
+
+      historyArea.style.display =
+        "none";
+
+      return;
+    }
+
+
+    historyArea.style.display =
+      "block";
+
+
+    history.forEach(
+      manufacturer => {
+
+        const button =
+          document.createElement(
+            "button"
+          );
+
+        button.type =
+          "button";
+
+        button.className =
+          "history-item";
+
+        button.textContent =
+          manufacturer;
+
+        button.addEventListener(
+          "click",
+          () => {
+
+            manufacturerInput.value =
+              manufacturer;
+
+            manufacturerInput.focus();
+          }
+        );
+
+        historyList.appendChild(
+          button
+        );
+      }
+    );
+  }
+
+
+  /* =========================================================
+     画面制御
+     ========================================================= */
+
+  function showModelStep() {
+
+    manufacturerStep
+      .classList.add("hidden");
+
+    modelStep
+      .classList.remove("hidden");
+
+    modelInput.focus();
+  }
+
+
+  function showManufacturerStep() {
+
+    modelStep
+      .classList.add("hidden");
+
+    manufacturerStep
+      .classList.remove("hidden");
+
+    hideMessage();
+    hideResult();
+
+    searchInfo
+      .classList.add("hidden");
+
+    /*
+     * メーカー入力欄を空にする
+     *
+     * 履歴はそのまま残す
+     */
+
+    manufacturerInput.value = "";
+
+    /*
+     * 型式入力欄も次回に備えて空にする
+     */
+
+    modelInput.value = "";
+
+    manufacturerInput.focus();
+  }
+
+
+  function hideResult() {
+
+    result.style.display =
+      "none";
+  }
+
+
+  function showMessage(
+    text,
+    isError
+  ) {
+
+    message.innerHTML =
+      text;
+
+    message.classList.toggle(
+      "error",
+      isError
+    );
+
+    message.style.display =
+      "block";
+  }
+
+
+  function hideMessage() {
+
+    message.style.display =
+      "none";
+
+    message.innerHTML =
+      "";
+  }
+
+
+  /* =========================================================
+     HTMLエスケープ
+     ========================================================= */
+
+  function escapeHtml(value) {
+
+    return String(value ?? "")
+      .replace(
+        /&/g,
+        "&amp;"
+      )
+      .replace(
+        /</g,
+        "&lt;"
+      )
+      .replace(
+        />/g,
+        "&gt;"
+      )
+      .replace(
+        /"/g,
+        "&quot;"
+      )
+      .replace(
+        /'/g,
+        "&#039;"
+      );
+  }
+
+
+  /* =========================================================
+     イベント
+     ========================================================= */
+
+  nextButton.addEventListener(
+    "click",
+    () => {
+
+      const manufacturer =
+        removeFullWidthSpaces(
+          manufacturerInput.value.trim()
+        );
+
+
+      if (!manufacturer) {
+
+        showMessage(
+          "メーカー名を入力してください。",
+          true
+        );
+
+        manufacturerInput.focus();
+
+        return;
+      }
+
+
+      /*
+       * メーカー履歴へ保存
+       */
+
+      saveManufacturerHistory(
+        manufacturer
+      );
+
+
+      hideMessage();
+
+      showModelStep();
+    }
+  );
+
+
+  searchButton.addEventListener(
+    "click",
+    searchVehicle
+  );
+
+
+  backButton.addEventListener(
+    "click",
+    showManufacturerStep
+  );
+
+
+  /* =========================================================
+     Enterキー
+     ========================================================= */
+
+  manufacturerInput.addEventListener(
+    "keydown",
+    event => {
+
+      if (event.key === "Enter") {
+        nextButton.click();
+      }
+    }
+  );
+
+
+  modelInput.addEventListener(
+    "keydown",
+    event => {
+
+      if (event.key === "Enter") {
+        searchButton.click();
+      }
+    }
+  );
+
+
+  /* =========================================================
+     初期化
+     ========================================================= */
+
+  loadHistory();
+
+  loadVehicles();
+
+
+  /* =========================================================
+     Service Worker
+     ========================================================= */
+
+  if (
+    "serviceWorker" in navigator
+  ) {
+
+    window.addEventListener(
+      "load",
+      () => {
+
+        navigator.serviceWorker
+          .register("./sw.js")
+          .then(
+            registration => {
+
+              console.log(
+                "Service Worker登録:",
+                registration.scope
+              );
+            }
+          )
+          .catch(
+            error => {
+
+              console.error(
+                "Service Worker登録失敗:",
+                error
+              );
+            }
+          );
+      }
+    );
+  }
+
+</script>
+
+</body>
+</html>
