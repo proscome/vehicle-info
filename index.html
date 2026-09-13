@@ -792,7 +792,7 @@
             id="manufacturerInput"
             type="text"
             autocomplete="off"
-            placeholder="メーカー名を入力"
+            placeholder="例：いすゞ、日野、三菱ふそう"
           >
 
         </div>
@@ -1039,6 +1039,40 @@
   let vehicles = [];
 
   let deferredPrompt = null;
+
+
+  /* ==========================================
+     入力欄へカーソルを移動
+     ========================================== */
+
+  function focusLater(element) {
+
+    setTimeout(
+      () => {
+
+        element.focus();
+
+        /*
+         * 文字が入っている場合は末尾へ
+         */
+
+        try {
+
+          const length =
+            element.value.length;
+
+          element.setSelectionRange(
+            length,
+            length
+          );
+
+        } catch (_) {}
+
+      },
+      150
+    );
+
+  }
 
 
   /* ==========================================
@@ -1488,7 +1522,7 @@
             manufacturerInput.value =
               value;
 
-            manufacturerInput.focus();
+            focusLater(manufacturerInput);
 
           }
         );
@@ -1622,10 +1656,7 @@
     renderHistory();
 
 
-    setTimeout(
-      () => manufacturerInput.focus(),
-      100
-    );
+    focusLater(manufacturerInput);
 
   }
 
@@ -1653,10 +1684,7 @@
       "";
 
 
-    setTimeout(
-      () => modelInput.focus(),
-      100
-    );
+    focusLater(modelInput);
 
   }
 
@@ -1912,7 +1940,7 @@
           "メーカー名を入力してください"
         );
 
-        manufacturerInput.focus();
+        focusLater(manufacturerInput);
 
         return;
 
@@ -1989,6 +2017,8 @@
           "メーカー名を入力してください"
         );
 
+        focusLater(manufacturerInput);
+
         return;
 
       }
@@ -2000,7 +2030,7 @@
           "型式を入力してください"
         );
 
-        modelInput.focus();
+        focusLater(modelInput);
 
         return;
 
@@ -2135,6 +2165,7 @@
             "th"
           );
 
+
         th.textContent =
           label;
 
@@ -2143,6 +2174,7 @@
           document.createElement(
             "td"
           );
+
 
         td.textContent =
           value ?? "";
@@ -2352,6 +2384,30 @@
     showManufacturerStep();
 
   }
+
+
+  /* ==========================================
+     初回起動時のカーソル
+     ========================================== */
+
+  window.addEventListener(
+    "load",
+    () => {
+
+      if (
+        !manufacturerStep.classList.contains(
+          "hidden"
+        )
+      ) {
+
+        focusLater(
+          manufacturerInput
+        );
+
+      }
+
+    }
+  );
 
 
   initialize();
