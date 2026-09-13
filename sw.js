@@ -1,125 +1,163 @@
-const CACHE_NAME = "vehicle-info-pwa-v1";
+const CACHE = "vehicle-info-v2";
 
-const APP_FILES = [
+
+const ASSETS = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
-  "./vehicle.json"
+  "./sw.js",
+  "./vehicle.json",
+  "./icons/icon-192.png",
+  "./icons/proscome-icon.png"
 ];
 
 
-/* --------------------------------
- * インストール
- * -------------------------------- */
-self.addEventListener(
-  "install",
-  event => {
+/* ==========================================
+   インストール
+   ========================================== */
 
-    event.waitUntil(
+self.addEventListener("install", (event) => {
 
-      caches
-        .open(CACHE_NAME)
-        .then(cache =>
-          cache.addAll(APP_FILES)
-        )
-        .then(() =>
-          self.skipWaiting()
-        )
+  event.waitUntil(
 
-    );
+    caches
+      .open(CACHE)
+
+      .then((cache) => {
+
+        return cache.addAll(ASSETS);
+
+      })
+
+      .then(() => {
+
+        return self.skipWaiting();
+
+      })
+
+  );
+
+});
+
+
+/* ==========================================
+   有効化
+   古いキャッシュを削除
+   ========================================== */
+
+self.addEventListener("activate", (event) => {
+
+  event.waitUntil(
+
+    caches
+      .keys()
+
+      .then((keys) => {
+
+        return Promise.all(
+
+          keys
+
+            .filter(
+              key => key !== CACHE
+            )
+
+            .map(
+              key => caches.delete(key)
+            )
+
+        );
+
+      })
+
+      .then(() => {
+
+        return self.clients.claim();
+
+      })
+
+  );
+
+});
+
+
+/* ==========================================
+   ファイル取得
+   基本はネットから最新版
+   オフラインならキャッシュ
+   ========================================== */
+
+self.addEventListener("fetch", (event) => {
+
+  const request =
+    event.request;
+
+
+  /*
+    GET以外は対象外
+  */
+
+  if (
+    request.method !== "GET"
+  ) {
+
+    return;
+
   }
-);
 
 
-/* --------------------------------
- * 有効化
- * -------------------------------- */
-self.addEventListener(
-  "activate",
-  event => {
+  event.respondWith(
 
-    event.waitUntil(
+    fetch(request)
 
-      caches
-        .keys()
-        .then(keys =>
+      .then((response) => {
 
-          Promise.all(
+        /*
+          正常なレスポンスなら
+          キャッシュも更新
+        */
 
-            keys
-              .filter(
-                key =>
-                  key !== CACHE_NAME
-              )
-              .map(
-                key =>
-                  caches.delete(key)
-              )
-
-          )
-
-        )
-        .then(() =>
-          self.clients.claim()
-        )
-
-    );
-  }
-);
-
-
-/* --------------------------------
- * 通信
- *
- * 基本はネット優先。
- * ネットに出られなければ
- * キャッシュを使用。
- * -------------------------------- */
-self.addEventListener(
-  "fetch",
-  event => {
-
-    if (
-      event.request.method !== "GET"
-    ) {
-      return;
-    }
-
-
-    event.respondWith(
-
-      fetch(event.request)
-
-        .then(response => {
+        if (
+          response &&
+          response.ok
+        ) {
 
           const copy =
             response.clone();
 
 
           caches
-            .open(CACHE_NAME)
-            .then(cache => {
+            .open(CACHE)
+            .then((cache) => {
 
               cache.put(
-                event.request,
+                request,
                 copy
               );
 
             });
 
+        }
 
-          return response;
 
-        })
+        return response;
 
-        .catch(() => {
+      })
 
-          return caches.match(
-            event.request
-          );
 
-        })
+      .catch(() => {
 
-    );
-  }
-);
+        /*
+          オフラインの場合は
+          キャッシュを使用
+        */
+
+        return caches.match(
+          request
+        );
+
+      })
+
+  );
+
+});

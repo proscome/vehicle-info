@@ -1,7 +1,7 @@
 {
   "name": "車両情報検索",
   "short_name": "車両情報",
-  "start_url": "./",
+  "start_url": ".",
   "display": "standalone",
   "background_color": "#f3f5f7",
   "theme_color": "#ffffff",
